@@ -17,36 +17,10 @@ import org.apache.hadoop.util.ToolRunner;
 
 import customWritable.CustomDetrafReg;
 import customWritable.CustomWritableDriver;
-import customWritable.CustomWritableDriver.CustomMapper;
-import customWritable.CustomWritableDriver.CustomReducer;
-
 public class CustomPartitionerDriver extends Configured implements Tool{
 
-	public class CustomPartitionerMapper extends Mapper<LongWritable,Text,LongWritable,Text> {
-		@Override
-		protected void map(LongWritable key, Text value,
-				org.apache.hadoop.mapreduce.Mapper.Context context)
-				throws IOException, InterruptedException {
-
-			String[] tokens = value.toString().split(";"); 
-			LongWritable l = new LongWritable(Long.parseLong(tokens[0])); 
-			CustomDetrafReg reg = new CustomDetrafReg(); 
-			reg.parser(tokens);
-			context.write(l, reg);
-		
-		}
-	}
 	
 	
-	public class CustomPartitionerReducer extends Reducer<LongWritable,Text,LongWritable,Text> {
-		
-		protected void reduce(LongWritable arg0, Iterable<Text> arg1,
-				org.apache.hadoop.mapreduce.Reducer.Context arg2)
-				throws IOException, InterruptedException {
-
-			arg2.write(arg0, new Text( arg1.toString()));		
-		}
-	}
 	
 	
 	
@@ -68,14 +42,14 @@ public class CustomPartitionerDriver extends Configured implements Tool{
 		job.setJobName("CustomWritableDriver");
 		
 		
-		FileInputFormat.addInputPath(job, new Path(arg0[0]));
-		FileOutputFormat.setOutputPath(job, new Path(arg0[1]));
+		FileInputFormat.setInputPaths(job,new Path("hdfs://localhost:54310/DETRAF/input/"));
+		FileOutputFormat.setOutputPath(job, new Path("hdfs://localhost:54310/DETRAF/output/output"));
 		
 		job.setMapperClass( CustomPartitionerMapper.class);
 		job.setReducerClass( CustomPartitionerReducer.class);
 		
 		job.setMapOutputKeyClass(LongWritable.class);
-		job.setMapOutputValueClass(Text.class);
+		job.setMapOutputValueClass(CustomDetrafReg.class);
 		
 		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(Text.class);
@@ -88,3 +62,36 @@ public class CustomPartitionerDriver extends Configured implements Tool{
 	
 	
 }
+
+
+ class CustomPartitionerMapper extends Mapper<LongWritable,Text,LongWritable,Text> {
+	@Override
+	protected void map(LongWritable key, Text value,
+			org.apache.hadoop.mapreduce.Mapper.Context context)
+			throws IOException, InterruptedException {
+
+		String[] tokens = value.toString().split(";"); 
+		LongWritable l = new LongWritable(Long.parseLong(tokens[0])); 
+		CustomDetrafReg reg = new CustomDetrafReg(); 
+		reg.parser(tokens);
+		context.write(l, reg);
+	
+	}
+	
+}
+ 
+  class CustomPartitionerReducer extends Reducer<LongWritable,CustomDetrafReg,LongWritable,Text> {
+		
+		protected void reduce(LongWritable arg0, Iterable<CustomDetrafReg> arg1,
+				org.apache.hadoop.mapreduce.Reducer.Context arg2)
+				throws IOException, InterruptedException {
+
+			StringBuffer sb = new StringBuffer(); 
+			for(CustomDetrafReg reg : arg1) {
+				sb.append(reg.toString()+"\t"); 
+			}
+			arg2.write(arg0, new Text(sb.toString()));
+		}
+	}
+	
+	

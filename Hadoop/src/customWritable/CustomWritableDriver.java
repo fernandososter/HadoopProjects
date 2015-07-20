@@ -26,17 +26,17 @@ public class CustomWritableDriver extends Configured implements Tool{
 		job.setJobName("CustomWritableDriver");
 		
 		
-		FileInputFormat.addInputPath(job, new Path(arg0[0]));
-		FileOutputFormat.setOutputPath(job, new Path(arg0[1]));
-		
+		FileInputFormat.setInputPaths(job,new Path("hdfs://localhost:54310/DETRAF/input/"));
+		FileOutputFormat.setOutputPath(job, new Path("hdfs://localhost:54310/DETRAF/output/output"));
+	
 		job.setMapperClass( CustomMapper.class);
 		job.setReducerClass( CustomReducer.class);
 		
 		job.setMapOutputKeyClass(LongWritable.class);
-		job.setMapOutputValueClass(Text.class);
+		job.setMapOutputValueClass(CustomDetrafReg.class);
 		
 		job.setOutputKeyClass(LongWritable.class);
-		job.setOutputValueClass(Text.class);
+		job.setOutputValueClass(CustomDetrafReg.class);
 		
 		return (job.waitForCompletion(true) ? 0 : 1); 
 	}
@@ -49,27 +49,39 @@ public class CustomWritableDriver extends Configured implements Tool{
 	
 
 	
-	public class CustomMapper extends Mapper<LongWritable,Text,LongWritable,Text> {
-		@Override
-		protected void map(LongWritable key, Text value,
-				org.apache.hadoop.mapreduce.Mapper.Context context)
-				throws IOException, InterruptedException {
-			String[] tokens = value.toString().split(";"); 
-			LongWritable l = new LongWritable(Long.parseLong(tokens[0])); 
-			CustomDetrafReg reg = new CustomDetrafReg(); 
-			reg.parser(tokens);
-			context.write(l, reg);
-		
-		
-		}
-	}
 	
 	
-	public class CustomReducer extends Reducer<LongWritable,Text,LongWritable,Text> {
-		protected void reduce(LongWritable arg0, java.lang.Iterable<Text> arg1, org.apache.hadoop.mapreduce.Reducer<LongWritable,Text,LongWritable,Text>.Context arg2) throws IOException ,InterruptedException {
-			 
-			arg2.write(arg0, new Text( arg1.toString()));
-		};
-	}
+	
 	
 }
+
+
+ class CustomMapper extends Mapper<LongWritable,Text,LongWritable,Text> {
+	@Override
+	protected void map(LongWritable key, Text value,
+			org.apache.hadoop.mapreduce.Mapper.Context context)
+			throws IOException, InterruptedException {
+		String[] tokens = value.toString().split(";"); 
+		LongWritable l = new LongWritable(Long.parseLong(tokens[0])); 
+		CustomDetrafReg reg = new CustomDetrafReg(); 
+		reg.parser(tokens);
+		context.write(l, reg);
+	
+	
+	}
+}
+ 
+  class CustomReducer extends Reducer<LongWritable,CustomDetrafReg,LongWritable,Text> {
+		
+	@Override
+	protected void reduce(LongWritable arg0, Iterable<CustomDetrafReg> arg1,
+			Reducer<LongWritable, CustomDetrafReg, LongWritable, Text>.Context arg2)
+					throws IOException, InterruptedException {
+
+		StringBuffer sb = new StringBuffer(); 
+		for(CustomDetrafReg reg : arg1) {
+			sb.append(reg.toString()+"\t"); 
+		}
+		arg2.write(arg0, new Text(sb.toString()));
+	}  
+  }

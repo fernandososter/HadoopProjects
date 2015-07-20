@@ -20,8 +20,8 @@ public class TesteDriver extends Configured implements Tool{
 		job.setJarByClass(TesteDriver.class);
 		job.setJobName("TesteDriver");
 		
-		FileInputFormat.setInputPaths(job,new Path(arg0[0]));
-		FileOutputFormat.setOutputPath(job, new Path(arg0[1]));
+		FileInputFormat.setInputPaths(job,new Path("hdfs://localhost:54310/DETRAF/input/"));
+		FileOutputFormat.setOutputPath(job, new Path("hdfs://localhost:54310/DETRAF/output/output"));
 		
 		job.setMapperClass(TesteMapper.class);
 		job.setReducerClass(TesteReducer.class);
