@@ -20,6 +20,7 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
@@ -86,8 +87,6 @@ class DETRAFKeyPair implements WritableComparable<DETRAFKeyPair> {
 
 
 class REALIZADOKey implements WritableComparable<REALIZADOKey> {
-
-	
 	String eot; 
 	String tecnologia; 
 	String canal; 
@@ -132,14 +131,10 @@ class REALIZADOCustomInputFormat extends FileInputFormat<REALIZADOKey,DoubleWrit
 			InputSplit arg0, TaskAttemptContext arg1) throws IOException,
 			InterruptedException {
 		// TODO Auto-generated method stub
-	
-		
 		return new REALIZADOCustomRecordReader();
 	}
 	
 }
-
-
 
 class REALIZADOCustomRecordReader extends RecordReader<REALIZADOKey,DoubleWritable> {
 	InputStream is; 
@@ -186,7 +181,6 @@ class REALIZADOCustomRecordReader extends RecordReader<REALIZADOKey,DoubleWritab
 		FSDataInputStream data = fSystem.open(fs.getPath()); 
 		lines = data.toString().split("\n"); 
 		
-		
 	}
 
 	@Override
@@ -198,8 +192,6 @@ class REALIZADOCustomRecordReader extends RecordReader<REALIZADOKey,DoubleWritab
 
 
 		String line = lines[iteration] ;
-
-
 		this.key = new REALIZADOKey(); 
 		this.key.canal = line.substring(26,29); 
 		this.key.eot = line.substring(3,6); 
@@ -213,10 +205,7 @@ class REALIZADOCustomRecordReader extends RecordReader<REALIZADOKey,DoubleWritab
 		
 		return false;
 	}
-	
 }
-
-
 
 
 class DETRAFCustomInputFormat extends FileInputFormat<DETRAFKeyPair,DoubleWritable>{
@@ -227,8 +216,6 @@ class DETRAFCustomInputFormat extends FileInputFormat<DETRAFKeyPair,DoubleWritab
 		// TODO Auto-generated method stub
 		return new DETRAFCustomRecordReader();
 	}
-	
-	
 }
 
 class DETRAFCustomRecordReader extends RecordReader<DETRAFKeyPair,DoubleWritable> {
@@ -299,14 +286,6 @@ class DETRAFCustomRecordReader extends RecordReader<DETRAFKeyPair,DoubleWritable
 
 
 
-
-
-
-
-
-
-
-
 public class CustomIOHadoop  extends Configured implements Tool{
 	
 	public static void main(String...args) throws Exception {
@@ -317,16 +296,18 @@ public class CustomIOHadoop  extends Configured implements Tool{
 	public int run(String[] arg0) throws Exception {
 	
 		Job job = new Job(getConf()); 
-		
 		job.setJarByClass(this.getClass());
 		
-		job.setInputFormatClass(DETRAFCustomInputFormat.class);
+		MultipleInputs.addInputPath(job, new Path(""), DETRAFCustomInputFormat.class);
+		MultipleInputs.addInputPath(job, new Path(""), REALIZADOCustomInputFormat.class);
+			
+		
+	//	job.setMapOutputKeyClass(theClass);
+	//	job.setMapOutputValueClass(theClass);
 		
 		
-	
 		
-		
-		return 0;
+		return job.waitForCompletion(true)?0:1;
 	}
 	
 	
