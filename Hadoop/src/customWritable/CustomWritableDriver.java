@@ -26,8 +26,8 @@ public class CustomWritableDriver extends Configured implements Tool{
 		job.setJobName("CustomWritableDriver");
 		
 		
-		FileInputFormat.setInputPaths(job,new Path("hdfs://localhost:54310/DETRAF/input/"));
-		FileOutputFormat.setOutputPath(job, new Path("hdfs://localhost:54310/DETRAF/output/output"));
+		FileInputFormat.setInputPaths(job,new Path("hdfs://localhost:9000/GovBr/*"));
+		FileOutputFormat.setOutputPath(job, new Path("hdfs://localhost:9000/DETRAF/output/output"));
 	
 		job.setMapperClass( CustomMapper.class);
 		job.setReducerClass( CustomReducer.class);

@@ -13,9 +13,11 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -285,8 +287,37 @@ class DETRAFCustomRecordReader extends RecordReader<DETRAFKeyPair,DoubleWritable
 }
 
 
+class DETRAFMapper extends Mapper<DETRAFKeyPair,DoubleWritable,DETRAFKeyPair,DoubleWritable> {
+	
+	@Override
+	protected void map(DETRAFKeyPair key, DoubleWritable value,
+			Mapper<DETRAFKeyPair, DoubleWritable, DETRAFKeyPair, DoubleWritable>.Context context)
+					throws IOException, InterruptedException {
+		context.write(key, value);
+	}
+}
+
+class REALIZADOMapper extends Mapper<REALIZADOKey,DoubleWritable,REALIZADOKey,DoubleWritable> {
+	@Override
+	protected void map(REALIZADOKey key, DoubleWritable value,
+			Mapper<REALIZADOKey, DoubleWritable, REALIZADOKey, DoubleWritable>.Context context) throws IOException, InterruptedException {
+		// TODO Auto-generated method stub
+		context.write(key, value);
+	}
+}
+
+
 
 public class CustomIOHadoop  extends Configured implements Tool{
+	
+
+static {
+	Configuration.addDefaultResource("/etc/hadoop/cluster-bigtop/hdfs-site.xml");
+	Configuration.addDefaultResource("/etc/hadoop/cluster-bigtop/core-site.xml");
+	Configuration.addDefaultResource("/etc/hadoop/cluster-bigtop/mapred-site.xml");
+	Configuration.addDefaultResource("/etc/hadoop/cluster-bigtop/yarn-site.xml");
+}
+	
 	
 	public static void main(String...args) throws Exception {
 		ToolRunner.run(new CustomIOHadoop(), args); 
@@ -295,17 +326,23 @@ public class CustomIOHadoop  extends Configured implements Tool{
 	@Override
 	public int run(String[] arg0) throws Exception {
 	
+		Path outputPath = new Path("/user/hduser/outputTeste/"); 
+		
+		FileSystem fs = FileSystem.get(getConf()); 
+		
+		if(fs.exists(outputPath) ) {
+			fs.removeAcl(outputPath);
+		}
+		
+		
 		Job job = new Job(getConf()); 
 		job.setJarByClass(this.getClass());
-		
-		MultipleInputs.addInputPath(job, new Path(""), DETRAFCustomInputFormat.class);
-		MultipleInputs.addInputPath(job, new Path(""), REALIZADOCustomInputFormat.class);
+		job.setUser("hduser");
+		MultipleInputs.addInputPath(job, new Path("/user/hduser/input/detraf/"), 
+				DETRAFCustomInputFormat.class,DETRAFMapper.class);
+		MultipleInputs.addInputPath(job, new Path("/user/hduser/input/realizado/"), 
+				REALIZADOCustomInputFormat.class,REALIZADOMapper.class);
 			
-		
-	//	job.setMapOutputKeyClass(theClass);
-	//	job.setMapOutputValueClass(theClass);
-		
-		
 		
 		return job.waitForCompletion(true)?0:1;
 	}
