@@ -14,7 +14,6 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.filecache.DistributedCache;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
@@ -29,19 +28,13 @@ class MapsideJoinMapper extends Mapper<LongWritable,Text,LongWritable,Text> {
 	protected void map(LongWritable key, Text value,
 			org.apache.hadoop.mapreduce.Mapper.Context context)
 			throws IOException, InterruptedException {
+
 		String anexo5Line = null; 
-		
-		
 		String[] arr = value.toString().split(";"); 
-		
-		
-		
-		
 		if(ht.containsKey(arr[1]) ) {
 			anexo5Line = ht.get(arr[1]); 
 			Text t = new Text(); 
 			t.set(value.toString() + " - " + anexo5Line);
-			
 		//fazer o que tem que ser feito
 			context.write(key, t);
 		}
@@ -54,7 +47,6 @@ class MapsideJoinMapper extends Mapper<LongWritable,Text,LongWritable,Text> {
 	@Override
 	protected void setup(org.apache.hadoop.mapreduce.Mapper.Context context)
 			throws IOException, InterruptedException {
-		Path[] paths = DistributedCache.getLocalCacheFiles(context.getConfiguration()); 
 		
 		URI[] uris = context.getCacheFiles(); 
 			
@@ -79,13 +71,7 @@ class MapsideJoinMapper extends Mapper<LongWritable,Text,LongWritable,Text> {
 }
 
 
-
-
-
-
 public class MapsideJoinDistributedCache extends Configured implements Tool {
-
-	
 
 	@Override
 	public int run(String[] arg0) throws Exception {
